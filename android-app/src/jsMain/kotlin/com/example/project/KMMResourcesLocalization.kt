@@ -8,8 +8,7 @@ var currentLanguage: String? = null
 val fallbackLanguage = "nl"
 
 private fun getString(key: String, vararg formatArgs: String): String {
-    val browserLanguage = window.navigator.languages.firstOrNull()
-    val language = currentLanguage ?: browserLanguage ?: fallbackLanguage
+    val language = currentLanguage ?: fallbackLanguage
     val languageKey = language.split('-')[0]
     val languageLocalizations = localizations[language] ?: localizations[languageKey] ?: localizations[fallbackLanguage]
     return languageLocalizations?.let {

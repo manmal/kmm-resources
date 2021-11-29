@@ -22,7 +22,7 @@ java {
 gradlePlugin {
     plugins {
         create("KmmResources") {
-            id = "dev.jamiecraane.plugins.kmmresources"
+            id = "dev.creativepragmatics.plugins.kmmresources"
             implementationClass = "com.capoax.kmmresources.plugin.KmmResourcesPlugin"
             description = description
             version = "1.0.0-alpha09"
