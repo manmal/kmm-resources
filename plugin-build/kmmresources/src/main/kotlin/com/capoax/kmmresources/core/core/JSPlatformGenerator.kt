@@ -1,10 +1,11 @@
 package com.capoax.kmmresources.core
 
 data class JSPlatformGenerator(
-        private val packageDeclaration: String?,
-        private val defaultLanguage: String,
-        override val generated: MutableMap<String, String> = mutableMapOf(),
-        override var generatedActual: String = """
+    private val packageDeclaration: String?,
+    private val defaultLanguage: String,
+    override val generated: MutableMap<String, String> = mutableMapOf(),
+    override var generatedActual: String = """
+@file:OptIn(ExperimentalJsExport::class)
 $packageDeclaration
 import kotlinx.browser.window
 
@@ -25,7 +26,7 @@ private fun getString(key: String, vararg formatArgs: String): String {
 }
 
 """
-): PlatformGenerator {
+) : PlatformGenerator {
 
     override fun generateLocalization(key: String, value: LocalizationValue, language: String) {
         if (generated[language] == null) {
@@ -48,14 +49,26 @@ internal fun localizations_$language(): Map<String, String> {
         generated[language] = generatedLanguage
     }
 
-    override fun generateActual(function: String, path: List<String>, name: String, numberOfArguments: Int, defaultTranslation: String) {
+    override fun generateActual(
+        function: String,
+        path: List<String>,
+        name: String,
+        numberOfArguments: Int,
+        defaultTranslation: String
+    ) {
         val id = id(path, name)
         val varArgs = (0 until numberOfArguments).map { ", value${it}" }.joinToString("")
 
-        generatedActual += "actual fun ${function}: String = getString(\"${id}\"${varArgs})\n"
+        generatedActual += "@JsExport actual fun ${function}: String = getString(\"${id}\"${varArgs})\n"
     }
 
-    override fun generateActualList(function: String, path: List<String>, name: String, values: List<Map<String, String>>, defaultLanguage: String) {
+    override fun generateActualList(
+        function: String,
+        path: List<String>,
+        name: String,
+        values: List<Map<String, String>>,
+        defaultLanguage: String
+    ) {
         val id = id(path, name)
         generatedActual += "actual fun ${function}: List<String> = listOf(\n"
 
@@ -69,9 +82,18 @@ internal fun localizations_$language(): Map<String, String> {
 
     }
 
-    override fun generateActualObjectList(function: String, path: List<String>, name: String, defaultTranslation: String) {
+    override fun generateActualObjectList(
+        function: String,
+        path: List<String>,
+        name: String,
+        defaultTranslation: String
+    ) {
         val id = (path + listOf("${name}.\$index") + listOf(function)).joinToString(".")
-        val functionName = "${(path.map { it.capitalize() } + listOf(name.capitalize()) + listOf(function)).joinToString(".")}()"
+        val functionName = "${
+            (path.map { it.capitalize() } + listOf(name.capitalize()) + listOf(function)).joinToString(
+                "."
+            )
+        }()"
         generatedActual += "actual fun ${functionName}: String = getString(\"${id}\")\n"
     }
 
@@ -95,6 +117,6 @@ internal fun localizations_$language(): Map<String, String> {
 
     companion object {
         private fun id(path: List<String>, name: String): String =
-                "${path.joinToString(".")}.${name}"
+            "${path.joinToString(".")}.${name}"
     }
 }

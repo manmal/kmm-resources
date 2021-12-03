@@ -22,7 +22,10 @@ data class CommonGenerated(
         useDefaultTranslationIfNotInitialized = useDefaultTranslationIfNotInitialized
     ),
     val jvmPlatformGenerator: PlatformGenerator = JVMPlatformGenerator(packageDeclaration),
-    val jsPlatformGenerator: PlatformGenerator = JSPlatformGenerator(packageDeclaration, defaultLanguage)
+    val jsPlatformGenerator: PlatformGenerator = JSPlatformGenerator(
+        packageDeclaration,
+        defaultLanguage
+    )
 ) {
     val platformGenerators: List<PlatformGenerator>
         get() = listOf(
@@ -45,6 +48,11 @@ data class CommonGenerated(
 
     private fun generateRoot(): String {
         var generated = """
+        |import kotlin.js.ExperimentalJsExport
+        |import kotlin.js.JsExport
+        |
+        |@ExperimentalJsExport
+        |@JsExport
         |class L {
         |  companion object {
         |
@@ -68,7 +76,15 @@ data class CommonGenerated(
 
     private fun generateGetOperator(children: Map<*, *>, indentationLevel: Int): String {
         val childrenOfChildren =
-            children.mapNotNull { if (it.value?.asStringToStringMap?.let { it.values.all { LocalizationValue(it).numberOfArguments == 0 } } == true) it.key as? String else null }
+            children.mapNotNull {
+                if (it.value?.asStringToStringMap?.let {
+                        it.values.all {
+                            LocalizationValue(
+                                it
+                            ).numberOfArguments == 0
+                        }
+                    } == true) it.key as? String else null
+            }
         return if (childrenOfChildren.isNotEmpty()) {
             val body = childrenOfChildren.map {
                 """
@@ -87,7 +103,12 @@ data class CommonGenerated(
         }
     }
 
-    private fun generateClass(name: String, parentPath: List<String>, rawChildren: Any, indentationLevel: Int = 1): String {
+    private fun generateClass(
+        name: String,
+        parentPath: List<String>,
+        rawChildren: Any,
+        indentationLevel: Int = 1
+    ): String {
         var children = rawChildren
         if (children is Map<*, *>) {
             children = children.filter { it.value != null }
@@ -108,7 +129,13 @@ data class CommonGenerated(
 
                 generatedExpectFunctions += "expect fun ${function}: String\n"
                 platformGenerators.forEach { platformGenerator ->
-                    platformGenerator.generateActual(function, parentPath, name, numberOfArguments, createDefaultTranslation(children, argumentNames))
+                    platformGenerator.generateActual(
+                        function,
+                        parentPath,
+                        name,
+                        numberOfArguments,
+                        createDefaultTranslation(children, argumentNames)
+                    )
                 }
 
                 return ""
@@ -200,15 +227,25 @@ data class CommonGenerated(
                             value.toSortedMap().forEach { function, t ->
                                 if (!expectActualGenerated) {
                                     generatedExpectFunctions += "expect fun ${fullNodePath}.${className}.${function}(): String\n"
-                                    val defaultTranslation = (t as LinkedHashMap<String,String>).get(defaultLanguage) ?: ""
+                                    val defaultTranslation =
+                                        (t as LinkedHashMap<String, String>).get(defaultLanguage)
+                                            ?: ""
                                     platformGenerators.forEach {
-                                        it.generateActualObjectList(function, parentPath, name, defaultTranslation)
+                                        it.generateActualObjectList(
+                                            function,
+                                            parentPath,
+                                            name,
+                                            defaultTranslation
+                                        )
                                     }
                                 }
                                 val translations = t.asStringToStringMap
                                 if (translations != null) {
                                     val localizations = mutableMapOf<String, String>()
-                                    val id = (parentPath + listOf("${name}.${index}") + listOf(function)).joinToString(".")
+                                    val id =
+                                        (parentPath + listOf("${name}.${index}") + listOf(function)).joinToString(
+                                            "."
+                                        )
                                     translations.keys.forEach { key ->
                                         localizations[key] = translations[key] ?: ""
                                     }
@@ -253,7 +290,13 @@ data class CommonGenerated(
                 val indexString = index?.let { "$it" } ?: ""
                 val fullKey = "${id}${indexString}"
 
-                platformGenerators.forEach { it.generateLocalization(fullKey, localizationValue, lang) }
+                platformGenerators.forEach {
+                    it.generateLocalization(
+                        fullKey,
+                        localizationValue,
+                        lang
+                    )
+                }
 
                 flattenedLine.translations[lang] = value
 
@@ -303,7 +346,8 @@ data class LocalizationValue(val numberOfArguments: Int, val value: String) {
 }
 
 val Any.isStringToStringMap: Boolean
-    get() = (this as? Map<*, *>)?.let { it.keys.all { it is String } && it.values.all { it is String } } ?: false
+    get() = (this as? Map<*, *>)?.let { it.keys.all { it is String } && it.values.all { it is String } }
+        ?: false
 
 val Any.asStringToStringMap: Map<String, String>?
     get() {
